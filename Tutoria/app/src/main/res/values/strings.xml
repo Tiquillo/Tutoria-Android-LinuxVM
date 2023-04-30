@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Tutoría</string>
+    <string name="button">Enviar</string>
+    <string name="textview1_string">Introduzca la IP o selecciónela\nde la lista de abajo</string>
+</resources>
