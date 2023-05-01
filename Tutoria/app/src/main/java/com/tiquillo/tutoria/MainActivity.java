@@ -1,5 +1,6 @@
 package com.tiquillo.tutoria;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -90,9 +91,25 @@ public class MainActivity extends AppCompatActivity {
                 Contador();
                 EnviarInfo();
             } else {
-                textView1.setText("Dirección IP no válida");
+                NoValidIP();
             }
         });
+    }
+
+    private void NoValidIP() {
+        textView1.setTextColor(Color.RED);
+        textView1.setText("\n\nDirección IP no válida\n\n");
+        new Thread(() -> {
+            try {
+                Thread.sleep(2500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            runOnUiThread(() -> {
+                textView1.setTextColor(Color.GRAY);
+                textView1.setText(R.string.textview1_string);
+            });
+        }).start();
     }
 
     private void Refresh(){
@@ -107,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void EnviarInfo() {
-        textView3.setText("Enviando mensaje");
+        textView3.setText("Enviando mensaje\n\nSi ve este texto,\nhay un problema sin resolver");
         new Thread(() -> {
             String a = "";
             try {
@@ -115,8 +132,13 @@ public class MainActivity extends AppCompatActivity {
                 socket = new Socket(SERVER_IP, SERVER_PORT);
                 input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 output = new PrintWriter(socket.getOutputStream(), true);
+                if (contadorDePulsaciones == 1) {
+                    a = "vez";
+                } else {
+                    a = "veces";
+                }
                 String message = "Hola, soy el dispositivo Android, he enviado este mensaje " +
-                        contadorDePulsaciones + " veces";
+                        contadorDePulsaciones + a;
                 output.printf(message);
                 Log.d("ENVIADO", message);
 
@@ -128,8 +150,10 @@ public class MainActivity extends AppCompatActivity {
 
                 socket.close();
             } catch (IOException e) {
-                runOnUiThread(() -> textView3.setText("NADIE ESCUCHA EN ESE PUERTO\nquizás el servidor no está activo\no la IP no es correcta"));
-                Log.d("NO SE PUDO ENVIAR", a);
+                runOnUiThread(() -> textView3.setText("NADIE ESCUCHA EN ESE PUERTO\n" +
+                        "quizás el servidor no está activo,\nla IP no es correcta\n" +
+                        "o no hay conexión a la red"));
+                Log.d("NO SE PUDO ENVIAR", "");
                 e.printStackTrace();
             }
         }).start();
@@ -145,7 +169,11 @@ public class MainActivity extends AppCompatActivity {
     }
     private void Contador() {
         contadorDePulsaciones++;
-        textView2.setText("Se ha presionado el botón " + contadorDePulsaciones + " veces");
+        if (contadorDePulsaciones == 1) {
+            textView2.setText("Se ha presionado el botón " + contadorDePulsaciones + " vez");
+        } else {
+            textView2.setText("Se ha presionado el botón " + contadorDePulsaciones + " veces");
+        }
     }
 
     public void getNetworkIPs() {
