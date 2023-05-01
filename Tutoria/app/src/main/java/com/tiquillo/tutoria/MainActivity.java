@@ -1,23 +1,5 @@
 package com.tiquillo.tutoria;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -25,8 +7,13 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,6 +22,8 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -54,10 +43,13 @@ public class MainActivity extends AppCompatActivity {
 
     TextView textView1;
     TextView textView2;
+    TextView textView3;
     EditText entry1;
     Button button;
 
     Spinner spinner1;
+
+    ImageView refresh;
 
     static String[] ips;
 
@@ -68,17 +60,15 @@ public class MainActivity extends AppCompatActivity {
 
         textView1 = findViewById(R.id.textView1);
         textView2 = findViewById(R.id.textView2);
+        textView3 = findViewById(R.id.textView3);
+        textView1.setVisibility(View.VISIBLE);
         entry1 = findViewById(R.id.entry1);
         button = findViewById(R.id.button);
         spinner1 = findViewById(R.id.spinner1);
-        textView1.setVisibility(View.VISIBLE);
 
-        new Thread(this::getNetworkIPs).start();
+        refresh = findViewById(R.id.refresh);
 
-        contadorDePulsaciones = 0;
-        pulsado = false;
-        SERVER_PORT = 5001;
-        SERVER_IP = "";
+        Refresh();
 
         spinner1.setOnItemSelectedListener(
                 new AdapterView.OnItemSelectedListener() {
@@ -91,10 +81,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+        refresh.setOnClickListener(view -> Refresh());
+
         button.setOnClickListener(view -> {
-            Contador();
             SERVER_IP = entry1.getText().toString();
             if (isValidIPv4(SERVER_IP)) {
+                Contador();
                 EnviarInfo();
             } else {
                 textView1.setText("Dirección IP no válida");
@@ -102,8 +94,19 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void Refresh(){
+        new Thread(this::getNetworkIPs).start();
+
+        contadorDePulsaciones = 0;
+        pulsado = false;
+        SERVER_PORT = 5001;
+        SERVER_IP = "";
+        textView1.setText(R.string.textview1_string);
+        textView2.setText("No se ha presionado el botón");
+    }
+
     private void EnviarInfo() {
-        textView1.setText("Enviando mensaje");
+        textView3.setText("Enviando mensaje");
         new Thread(() -> {
             String a = "";
             try {
@@ -111,17 +114,21 @@ public class MainActivity extends AppCompatActivity {
                 socket = new Socket(SERVER_IP, SERVER_PORT);
                 input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 output = new PrintWriter(socket.getOutputStream(), true);
-                output.println("Hola, soy el dispositivo Android, he enviado este mensaje " +
-                        contadorDePulsaciones + " veces");
+                String message = "Hola, soy el dispositivo Android, he enviado este mensaje " +
+                        contadorDePulsaciones + " veces";
+                output.printf(message);
+                Log.d("ENVIADO", message);
 
                 String response = input.readLine();
                 Log.d("RESPUESTA", response);
+                runOnUiThread(() -> textView3.setText("RESPUESTA: " + response));
 
                 socket.close();
-                Log.d("ENVIADO", a);
+                runOnUiThread(() -> textView1.setText("Mensaje enviado"));
             } catch (IOException e) {
-                e.printStackTrace();
+                runOnUiThread(() -> textView3.setText("NADIE ESCUCHA EN ESE PUERTO\nquizá el servidor no está activo\no la IP no es correcta"));
                 Log.d("NO SE PUDO ENVIAR", a);
+                e.printStackTrace();
             }
         }).start();
     }
@@ -136,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private void Contador() {
         contadorDePulsaciones++;
-        textView2.setText("Se ha presionado: " + contadorDePulsaciones + " veces");
+        textView2.setText("Se ha presionado el botón " + contadorDePulsaciones + " veces");
     }
 
     public void getNetworkIPs() {
@@ -159,9 +166,8 @@ public class MainActivity extends AppCompatActivity {
             return;     // exit method, otherwise "ip might not have been initialized"
         }
         final byte[] ipFinal = ip;
-        Log.d("IP", "Funciona todavía");
 
-        for(int i=1;i<=254;i++) {
+        for(int i=1;i<255;i++) {
             final int j = i;
             new Thread(() -> {
                 ipFinal[3] = (byte)j;
@@ -174,16 +180,14 @@ public class MainActivity extends AppCompatActivity {
                         list.add(output);
                         Log.d("IP", output + " en red");
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }).start();
 
         }
         try {
-            Thread.sleep(5000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -192,10 +196,23 @@ public class MainActivity extends AppCompatActivity {
             ips[i] = list.get(i);
             Log.d("IP lista", ips[i]);
         }
-        final ArrayAdapter<String> adapter = new ArrayAdapter<String>
+        Arrays.sort(ips);
+        Log.d("IP lista tamaño", ips.length + "");
+        final ArrayAdapter<String> adapter = new ArrayAdapter<>
                 (this, android.R.layout.simple_spinner_item,
                         ips);
-        //runOnUiThread(() -> spinner1.setAdapter(adapter));
+        byte[] finalIp = ip;
+        runOnUiThread(() -> {
+            spinner1.setAdapter(adapter);
+
+            try {
+                String ipID = InetAddress.getByAddress(finalIp).toString().substring(1);
+                ipID = ipID.substring(0, ipID.lastIndexOf(".")+1) + 'X';
+                entry1.setText(ipID);
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public byte[] ipv4ToBytes(String ipv4) throws IllegalArgumentException {
@@ -212,6 +229,16 @@ public class MainActivity extends AppCompatActivity {
             bytes[i] = (byte) octet;
         }
         return bytes;
+    }
+
+    public void onBackPressed(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setCancelable(false);
+        builder.setMessage("¿Desea salir de la app?");
+        builder.setPositiveButton("Sí", (dialog, which) -> finish());
+        builder.setNegativeButton("No", (dialog, which) -> dialog.cancel());
+        AlertDialog alert=builder.create();
+        alert.show();
     }
 }
 

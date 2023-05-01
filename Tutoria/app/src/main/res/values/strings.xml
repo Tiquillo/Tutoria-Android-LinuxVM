@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Tutoría</string>
     <string name="button">Enviar</string>
-    <string name="textview1_string">Introduzca la IP o selecciónela\nde la lista de abajo</string>
+    <string name="textview1_string">Introduzca la IP\n\nPor defecto se carga la ID de red,\ndebe cambiar el último octeto (la X)\n(en caso de salir 0.0.0.X, no hay red)</string>
 </resources>
