@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(view -> {
             SERVER_IP = entry1.getText().toString();
             if (isValidIPv4(SERVER_IP)) {
+                textView1.setText("Dirección IP válida");
                 Contador();
                 EnviarInfo();
             } else {
@@ -119,14 +120,15 @@ public class MainActivity extends AppCompatActivity {
                 output.printf(message);
                 Log.d("ENVIADO", message);
 
+                runOnUiThread(() -> textView3.setText("Esperando respuesta\nSi no responde en poco tiempo,\nes posible que no haya conexión"));
+
                 String response = input.readLine();
                 Log.d("RESPUESTA", response);
                 runOnUiThread(() -> textView3.setText("RESPUESTA: " + response));
 
                 socket.close();
-                runOnUiThread(() -> textView1.setText("Mensaje enviado"));
             } catch (IOException e) {
-                runOnUiThread(() -> textView3.setText("NADIE ESCUCHA EN ESE PUERTO\nquizá el servidor no está activo\no la IP no es correcta"));
+                runOnUiThread(() -> textView3.setText("NADIE ESCUCHA EN ESE PUERTO\nquizás el servidor no está activo\no la IP no es correcta"));
                 Log.d("NO SE PUDO ENVIAR", a);
                 e.printStackTrace();
             }
