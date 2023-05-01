@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 for (InetAddress addr : addrs) {
                     if (!addr.isLoopbackAddress() && addr instanceof Inet4Address) {
                         ip = ipv4ToBytes(addr.getHostAddress());
-                        Log.d("IP", addr.getHostAddress());
+                        Log.d("HOST IP ADDRESS", addr.getHostAddress());
                     }
                 }
             }
@@ -167,6 +167,14 @@ public class MainActivity extends AppCompatActivity {
         }
         final byte[] ipFinal = ip;
 
+        try {
+            String ipID = InetAddress.getByAddress(ipFinal).toString().substring(1);
+            ipID = ipID.substring(0, ipID.lastIndexOf(".")+1) + 'X';
+            entry1.setText(ipID);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        /*
         for(int i=1;i<255;i++) {
             final int j = i;
             new Thread(() -> {
@@ -212,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }); */
     }
 
     public byte[] ipv4ToBytes(String ipv4) throws IllegalArgumentException {
